@@ -56,8 +56,8 @@ export function SearchScreen({
   )
 
   return (
-    <AppShell className="h-full lg:h-auto">
-      <div className="flex h-full min-h-0 flex-1 flex-col lg:min-h-[calc(100vh-3rem)]">
+    <AppShell>
+      <div className="flex min-h-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 shrink-0 border-b border-rhf-line bg-white pt-[env(safe-area-inset-top)] shadow-sm lg:static lg:shadow-none">
           <div className="flex items-center gap-2 px-3 py-2 lg:px-5 lg:py-3">
             <button

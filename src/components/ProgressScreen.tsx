@@ -43,7 +43,8 @@ export function ProgressScreen({
 
   return (
     <AppShell>
-      <header className="border-b border-rhf-line bg-white px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:px-6 lg:py-4">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <header className="shrink-0 border-b border-rhf-line bg-white px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:px-6 lg:py-4">
         <div className="flex items-center justify-between gap-2 lg:gap-4">
           <button
             type="button"
@@ -116,7 +117,7 @@ export function ProgressScreen({
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch]">
         {entries.length === 0 ? (
           <p className="px-6 py-12 text-center text-rhf-pine/70">
             No counts yet. Search for a part and enter a quantity.
@@ -148,6 +149,7 @@ export function ProgressScreen({
             })}
           </ul>
         )}
+      </div>
       </div>
     </AppShell>
   )

@@ -28,7 +28,7 @@ export function VirtualItemList({ items, countedIds, counts, onSelect }: Props) 
   }
 
   return (
-    <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+    <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
       <div
         className="relative w-full"
         style={{ height: `${virtualizer.getTotalSize()}px` }}

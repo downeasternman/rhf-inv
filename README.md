@@ -14,8 +14,8 @@ Open the local URL Vite prints (usually `http://localhost:5173`).
 
 ### Try on a phone
 
-1. Run `npm run dev -- --host`
-2. On the same Wi‑Fi, open the LAN URL shown in the terminal (e.g. `http://192.168.x.x:5173`)
+1. Run `npm run dev:host`
+2. On the same Wi‑Fi, open the **Network** URL shown in the terminal (e.g. `http://192.168.x.x:5173`)
 
 ## Scripts
 

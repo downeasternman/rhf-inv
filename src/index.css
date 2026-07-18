@@ -16,6 +16,7 @@ html,
 body,
 #root {
   height: 100%;
+  height: 100dvh;
 }
 
 body {
@@ -24,6 +25,13 @@ body {
   color: var(--color-rhf-ink);
   background: var(--color-rhf-fog);
   -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  body {
+    overflow: auto;
+  }
 }
 
 * {
