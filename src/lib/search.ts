@@ -54,6 +54,29 @@ const ALIASES: Record<string, string[]> = {
   '45d': ['45'],
   '90': ['90d'],
   '45': ['45d'],
+  // Oil nozzle spray pattern: A = hollow (HOL), B = solid (SOL)
+  a: ['hol', 'hollow'],
+  hol: ['a', 'hollow'],
+  hollow: ['hol', 'a'],
+  b: ['sol', 'solid'],
+  sol: ['b', 'solid'],
+  solid: ['sol', 'b'],
+}
+
+const SPRAY_TYPE_TOKENS = new Set(['a', 'b', 'hol', 'sol', 'hollow', 'solid'])
+
+function sprayTypeInName(name: string, queryToken: string): boolean {
+  const upper = name.toUpperCase()
+  const expanded = expandToken(queryToken.toLowerCase())
+  for (const token of expanded) {
+    if (token === 'a' || token === 'hol' || token === 'hollow') {
+      if (/\bHOL\b|HOLLOW/i.test(upper) || /\dHOL\b/i.test(upper)) return true
+    }
+    if (token === 'b' || token === 'sol' || token === 'solid') {
+      if (/\bSOL\b|SOLID/i.test(upper) || /\dSOL\b/i.test(upper)) return true
+    }
+  }
+  return false
 }
 
 export type CategoryGroup = {
@@ -79,6 +102,8 @@ export function normalizeSearchText(raw: string): string {
   return raw
     .toLowerCase()
     .replace(/°/g, ' ')
+    .replace(/(\d)([a-z])/gi, '$1 $2')
+    .replace(/([a-z])(\d)/gi, '$1 $2')
     .replace(/(\d)\s*d\b/g, '$1 ') // 90d / 45D → 90 / 45
     .replace(/(\d)d\b/g, '$1 ')
     .replace(/[#]/g, ' ')
@@ -197,6 +222,9 @@ function scoreItem(
     if (itemTokenSet.has(token)) score += 3
     else if (expandToken(token).some((a) => itemTokenSet.has(a))) score += 2
     else score += 1
+    if (SPRAY_TYPE_TOKENS.has(token) && sprayTypeInName(item.name, token)) {
+      score += 3
+    }
   }
   // Prefer shorter catalog names (exact fittings over long assemblies)
   score += Math.max(0, 40 - item.name.length) / 40
