@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type Fuse from 'fuse.js'
 import type { InventoryItem } from '../types'
 import { searchInventory, type SearchableItem } from '../lib/search'
 import { AppShell } from './AppShell'
+import { BarcodeScanner } from './BarcodeScanner'
 import { CategoryDrawer } from './CategoryDrawer'
 import { CategoryPanel } from './CategoryPanel'
 import { VirtualItemList } from './VirtualItemList'
@@ -41,6 +42,33 @@ export function SearchScreen({
   const [query, setQuery] = useState(initialQuery)
   const [debounced, setDebounced] = useState(initialQuery)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [scanNotFound, setScanNotFound] = useState<string | null>(null)
+
+  const itemsByCode = useMemo(() => {
+    const map = new Map<string, InventoryItem>()
+    for (const item of items) map.set(item.id, item)
+    return map
+  }, [items])
+
+  const handleScan = useCallback(
+    (code: string) => {
+      const item = itemsByCode.get(code)
+      if (item) {
+        setScannerOpen(false)
+        setScanNotFound(null)
+        onSelect(item)
+        return
+      }
+      setScanNotFound(`No part for ${code}`)
+    },
+    [itemsByCode, onSelect],
+  )
+
+  const closeScanner = useCallback(() => {
+    setScannerOpen(false)
+    setScanNotFound(null)
+  }, [])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -109,6 +137,16 @@ export function SearchScreen({
                 />
                 <button
                   type="button"
+                  onClick={() => {
+                    setScanNotFound(null)
+                    setScannerOpen(true)
+                  }}
+                  className="min-h-12 shrink-0 rounded-xl border border-rhf-line bg-white px-3 text-sm font-medium text-rhf-pine active:bg-rhf-mist lg:hover:bg-rhf-mist"
+                >
+                  Scan
+                </button>
+                <button
+                  type="button"
                   onClick={() => setDrawerOpen(true)}
                   className={`min-h-12 shrink-0 rounded-xl border px-3 text-sm font-medium lg:hidden ${
                     selectedCategories.size > 0
@@ -158,6 +196,13 @@ export function SearchScreen({
           selected={selectedCategories}
           onClose={() => setDrawerOpen(false)}
           onChange={onCategoriesChange}
+        />
+
+        <BarcodeScanner
+          open={scannerOpen}
+          onClose={closeScanner}
+          onScan={handleScan}
+          notFoundMessage={scanNotFound}
         />
       </div>
     </AppShell>
