@@ -125,7 +125,7 @@ export function SearchScreen({
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="shrink-0 border-b border-rhf-line bg-white px-3 py-3 lg:px-5">
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
                 <input
                   type="search"
                   value={query}
@@ -133,32 +133,34 @@ export function SearchScreen({
                   placeholder="e.g. 3/4 press 90"
                   autoFocus
                   enterKeyHint="search"
-                  className="min-h-12 flex-1 rounded-xl border border-rhf-line bg-rhf-fog px-3 text-base outline-none focus:border-rhf-pine lg:px-4"
+                  className="min-h-12 w-full min-w-0 flex-1 rounded-xl border border-rhf-line bg-rhf-fog px-3 text-base outline-none focus:border-rhf-pine lg:px-4"
                 />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setScanNotFound(null)
-                    setScannerOpen(true)
-                  }}
-                  className="min-h-12 shrink-0 rounded-xl border border-rhf-line bg-white px-3 text-sm font-medium text-rhf-pine active:bg-rhf-mist lg:hover:bg-rhf-mist"
-                >
-                  Scan
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDrawerOpen(true)}
-                  className={`min-h-12 shrink-0 rounded-xl border px-3 text-sm font-medium lg:hidden ${
-                    selectedCategories.size > 0
-                      ? 'border-rhf-forest bg-rhf-mist text-rhf-forest'
-                      : 'border-rhf-line bg-white text-rhf-pine'
-                  }`}
-                >
-                  Filter
-                  {selectedCategories.size > 0
-                    ? ` (${selectedCategories.size})`
-                    : ''}
-                </button>
+                <div className="flex gap-2 lg:contents">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScanNotFound(null)
+                      setScannerOpen(true)
+                    }}
+                    className="min-h-12 flex-1 rounded-xl border border-rhf-line bg-white px-3 text-sm font-medium text-rhf-pine active:bg-rhf-mist lg:flex-none lg:hover:bg-rhf-mist"
+                  >
+                    Scan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDrawerOpen(true)}
+                    className={`min-h-12 flex-1 rounded-xl border px-3 text-sm font-medium lg:hidden ${
+                      selectedCategories.size > 0
+                        ? 'border-rhf-forest bg-rhf-mist text-rhf-forest'
+                        : 'border-rhf-line bg-white text-rhf-pine'
+                    }`}
+                  >
+                    Filter
+                    {selectedCategories.size > 0
+                      ? ` (${selectedCategories.size})`
+                      : ''}
+                  </button>
+                </div>
               </div>
 
               {selectedCategories.size > 0 && (
