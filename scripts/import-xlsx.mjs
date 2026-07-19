@@ -5,7 +5,14 @@ import * as XLSX from 'xlsx'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
-const inputPath = process.env.INVENTORY_XLSX ?? join(root, '')
+const inputFile = process.env.INVENTORY_XLSX
+if (!inputFile) {
+  console.error('Set INVENTORY_XLSX to the path of your local source spreadsheet.')
+  process.exit(1)
+}
+const inputPath = inputFile.startsWith('/') || /^[A-Za-z]:/.test(inputFile)
+  ? inputFile
+  : join(root, inputFile)
 const outputPath = join(root, 'src', 'data', 'inventory.json')
 
 const workbook = XLSX.read(readFileSync(inputPath), { type: 'buffer' })

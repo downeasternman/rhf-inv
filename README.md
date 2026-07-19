@@ -6,7 +6,7 @@ Mobile-friendly front-end demo for annual inventory counting. Search and filter 
 
 ```bash
 npm install
-npm run import-data
+$env:INVENTORY_XLSX="path\to\your-spreadsheet.xlsx"; npm run import-data
 npm run dev
 ```
 
@@ -21,7 +21,7 @@ Open the local URL Vite prints (usually `http://localhost:5173`).
 
 | Command | Purpose |
 |---------|---------|
-| `npm run import-data` | Regenerate `src/data/inventory.json` from a local source spreadsheet |
+| `npm run import-data` | Regenerate `src/data/inventory.json` from a local spreadsheet (`INVENTORY_XLSX`) |
 | `npm run dev` | Start the demo |
 | `npm run build` | Production build |
 
