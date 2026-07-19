@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
-const inputPath = join(root, '')
+const inputPath = process.env.INVENTORY_XLSX ?? join(root, '')
 const outputPath = join(root, 'src', 'data', 'inventory.json')
 
 const workbook = XLSX.read(readFileSync(inputPath), { type: 'buffer' })

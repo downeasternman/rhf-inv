@@ -21,7 +21,7 @@ Open the local URL Vite prints (usually `http://localhost:5173`).
 
 | Command | Purpose |
 |---------|---------|
-| `npm run import-data` | Convert `source spreadsheet` → `src/data/inventory.json` |
+| `npm run import-data` | Regenerate `src/data/inventory.json` from a local source spreadsheet |
 | `npm run dev` | Start the demo |
 | `npm run build` | Production build |
 
@@ -43,7 +43,7 @@ Blank Excel categories become `Uncategorized`. Only **R-number** stock parts (e.
    - **Output directory:** `dist`
 4. Deploy
 
-Re-run `npm run import-data` locally before pushing if you updated `source spreadsheet`.
+Re-run `npm run import-data` locally before pushing if you updated the source spreadsheet.
 
 ## Notes
 
