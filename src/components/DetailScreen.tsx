@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import type { InventoryItem } from '../types'
 import { AppShell } from './AppShell'
 
@@ -17,6 +17,7 @@ export function DetailScreen({
   onClear,
   onBack,
 }: Props) {
+  const qtyInputRef = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState(
     existingQty !== undefined ? String(existingQty) : '',
   )
@@ -25,6 +26,9 @@ export function DetailScreen({
     event.preventDefault()
     const qty = Number(value)
     if (!Number.isFinite(qty) || qty < 0) return
+    qtyInputRef.current?.blur()
+    const active = document.activeElement
+    if (active instanceof HTMLElement) active.blur()
     onSave(Math.floor(qty))
   }
 
@@ -68,6 +72,7 @@ export function DetailScreen({
             <label className="block">
               <span className="text-sm font-medium text-rhf-pine">Count quantity</span>
               <input
+                ref={qtyInputRef}
                 type="number"
                 inputMode="numeric"
                 pattern="[0-9]*"

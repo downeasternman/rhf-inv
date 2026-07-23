@@ -54,6 +54,11 @@ export function SearchScreen({
   const wedgeBufferRef = useRef('')
   const wedgeLastKeyAtRef = useRef(0)
 
+  useEffect(() => {
+    if (!scannerOpen) return
+    searchInputRef.current?.blur()
+  }, [scannerOpen])
+
   const itemsByCode = useMemo(() => {
     const map = new Map<string, InventoryItem>()
     for (const item of items) map.set(item.id, item)
@@ -183,7 +188,7 @@ export function SearchScreen({
                     onSelect(item, 'search')
                   }}
                   placeholder="e.g. 3/4 press 90"
-                  autoFocus
+                  autoFocus={!resumeScanner}
                   enterKeyHint="search"
                   className="min-h-12 w-full min-w-0 flex-1 rounded-xl border border-rhf-line bg-rhf-fog px-3 text-base outline-none focus:border-rhf-pine lg:px-4"
                 />
@@ -192,6 +197,7 @@ export function SearchScreen({
                     type="button"
                     onClick={() => {
                       primeScanBeep()
+                      searchInputRef.current?.blur()
                       setScanNotFound(null)
                       setScannerOpen(true)
                     }}
