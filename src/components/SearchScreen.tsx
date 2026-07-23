@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type Fuse from 'fuse.js'
 import type { InventoryItem } from '../types'
 import { parseRCode } from '../lib/barcode'
+import { playScanBeep } from '../lib/beep'
 import { searchInventory, type SearchableItem } from '../lib/search'
 import { AppShell } from './AppShell'
 import { BarcodeScanner } from './BarcodeScanner'
@@ -20,9 +21,10 @@ type Props = {
   teamLabel: string
   initialQuery: string
   selectedCategories: Set<string>
+  resumeScanner?: boolean
   onQueryChange: (query: string) => void
   onCategoriesChange: (next: Set<string>) => void
-  onSelect: (item: InventoryItem) => void
+  onSelect: (item: InventoryItem, source: 'scan' | 'search') => void
   onBack: () => void
   onProgress: () => void
 }
@@ -36,6 +38,7 @@ export function SearchScreen({
   teamLabel,
   initialQuery,
   selectedCategories,
+  resumeScanner = false,
   onQueryChange,
   onCategoriesChange,
   onSelect,
@@ -45,7 +48,7 @@ export function SearchScreen({
   const [query, setQuery] = useState(initialQuery)
   const [debounced, setDebounced] = useState(initialQuery)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [scannerOpen, setScannerOpen] = useState(false)
+  const [scannerOpen, setScannerOpen] = useState(() => Boolean(resumeScanner))
   const [scanNotFound, setScanNotFound] = useState<string | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const wedgeBufferRef = useRef('')
@@ -61,10 +64,11 @@ export function SearchScreen({
     (code: string) => {
       const item = itemsByCode.get(code)
       if (item) {
+        playScanBeep()
         setScannerOpen(false)
         setScanNotFound(null)
         setQuery('')
-        onSelect(item)
+        onSelect(item, 'scan')
         return
       }
       setScanNotFound(`No part for ${code}`)
@@ -232,7 +236,7 @@ export function SearchScreen({
               items={results}
               countedIds={countedIds}
               counts={counts}
-              onSelect={onSelect}
+              onSelect={(item) => onSelect(item, 'search')}
             />
           </div>
         </div>

@@ -118,9 +118,12 @@ export default function App() {
         teamLabel={`${session.member1} & ${session.member2}`}
         initialQuery={searchQuery}
         selectedCategories={selectedCategories}
+        resumeScanner={screen.resumeScanner}
         onQueryChange={handleQueryChange}
         onCategoriesChange={handleCategoriesChange}
-        onSelect={(item) => setScreen({ name: 'detail', itemId: item.id })}
+        onSelect={(item, source) =>
+          setScreen({ name: 'detail', itemId: item.id, source })
+        }
         onBack={() => setScreen({ name: 'home' })}
         onProgress={() => setScreen({ name: 'progress' })}
       />
@@ -143,6 +146,7 @@ export default function App() {
       )
     }
     const existing = getCount(session, item.id)
+    const detailSource = screen.source
 
     return (
       <DetailScreen
@@ -151,7 +155,11 @@ export default function App() {
         onBack={() => setScreen({ name: 'search' })}
         onSave={(qty) => {
           setSession(setCount(session, item.id, qty))
-          setScreen({ name: 'search' })
+          setScreen(
+            detailSource === 'scan'
+              ? { name: 'search', resumeScanner: true }
+              : { name: 'search' },
+          )
         }}
         onClear={
           existing
@@ -171,7 +179,9 @@ export default function App() {
       itemsById={itemsById}
       onBack={() => setScreen({ name: 'search' })}
       onHome={() => setScreen({ name: 'home' })}
-      onOpenItem={(itemId) => setScreen({ name: 'detail', itemId })}
+      onOpenItem={(itemId) =>
+        setScreen({ name: 'detail', itemId, source: 'search' })
+      }
     />
   )
 }

@@ -3,7 +3,7 @@ import { BrowserMultiFormatReader } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 import { parseRCode } from '../lib/barcode'
 
-const DEBOUNCE_MS = 1500
+const DEBOUNCE_MS = 750
 
 const HINTS = new Map<DecodeHintType, unknown>([
   [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128, BarcodeFormat.CODE_39]],

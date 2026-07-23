@@ -20,6 +20,6 @@ export type CountSession = {
 
 export type Screen =
   | { name: 'home' }
-  | { name: 'search' }
-  | { name: 'detail'; itemId: string }
+  | { name: 'search'; resumeScanner?: boolean }
+  | { name: 'detail'; itemId: string; source: 'scan' | 'search' }
   | { name: 'progress' }
