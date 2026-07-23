@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type Fuse from 'fuse.js'
 import type { InventoryItem } from '../types'
+import { parseRCode } from '../lib/barcode'
 import { searchInventory, type SearchableItem } from '../lib/search'
 import { AppShell } from './AppShell'
 import { BarcodeScanner } from './BarcodeScanner'
 import { CategoryDrawer } from './CategoryDrawer'
 import { CategoryPanel } from './CategoryPanel'
 import { VirtualItemList } from './VirtualItemList'
+
+const WEDGE_GAP_MS = 80
 
 type Props = {
   items: SearchableItem[]
@@ -44,6 +47,9 @@ export function SearchScreen({
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [scannerOpen, setScannerOpen] = useState(false)
   const [scanNotFound, setScanNotFound] = useState<string | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const wedgeBufferRef = useRef('')
+  const wedgeLastKeyAtRef = useRef(0)
 
   const itemsByCode = useMemo(() => {
     const map = new Map<string, InventoryItem>()
@@ -57,6 +63,7 @@ export function SearchScreen({
       if (item) {
         setScannerOpen(false)
         setScanNotFound(null)
+        setQuery('')
         onSelect(item)
         return
       }
@@ -77,6 +84,36 @@ export function SearchScreen({
     }, 120)
     return () => window.clearTimeout(timer)
   }, [query, onQueryChange])
+
+  useEffect(() => {
+    if (scannerOpen) return
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.target === searchInputRef.current) return
+
+      const now = Date.now()
+      if (now - wedgeLastKeyAtRef.current > WEDGE_GAP_MS) {
+        wedgeBufferRef.current = ''
+      }
+      wedgeLastKeyAtRef.current = now
+
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        const code = parseRCode(wedgeBufferRef.current)
+        wedgeBufferRef.current = ''
+        if (!code) return
+        e.preventDefault()
+        handleScan(code)
+        return
+      }
+
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        wedgeBufferRef.current += e.key
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [scannerOpen, handleScan])
 
   const results = useMemo(
     () => searchInventory(fuse, items, debounced, selectedCategories),
@@ -127,9 +164,17 @@ export function SearchScreen({
             <div className="shrink-0 border-b border-rhf-line bg-white px-3 py-3 lg:px-5">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
                 <input
+                  ref={searchInputRef}
                   type="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter') return
+                    const code = parseRCode(query)
+                    if (!code) return
+                    e.preventDefault()
+                    handleScan(code)
+                  }}
                   placeholder="e.g. 3/4 press 90"
                   autoFocus
                   enterKeyHint="search"

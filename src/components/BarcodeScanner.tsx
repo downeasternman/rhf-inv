@@ -5,8 +5,9 @@ import { parseRCode } from '../lib/barcode'
 
 const DEBOUNCE_MS = 1500
 
-const HINTS = new Map([
+const HINTS = new Map<DecodeHintType, unknown>([
   [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128, BarcodeFormat.CODE_39]],
+  [DecodeHintType.TRY_HARDER, true],
 ])
 
 type Props = {
@@ -21,6 +22,7 @@ export function BarcodeScanner({ open, onClose, onScan, notFoundMessage }: Props
   const onScanRef = useRef(onScan)
   const lastScanRef = useRef<{ code: string; at: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [unrecognized, setUnrecognized] = useState<string | null>(null)
 
   onScanRef.current = onScan
 
@@ -28,6 +30,7 @@ export function BarcodeScanner({ open, onClose, onScan, notFoundMessage }: Props
     if (!open) return
 
     setError(null)
+    setUnrecognized(null)
     lastScanRef.current = null
 
     const reader = new BrowserMultiFormatReader(HINTS)
@@ -37,13 +40,26 @@ export function BarcodeScanner({ open, onClose, onScan, notFoundMessage }: Props
     async function start() {
       try {
         controls = await reader.decodeFromConstraints(
-          { video: { facingMode: 'environment' } },
+          {
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          },
           videoRef.current!,
           (result) => {
             if (!active || !result) return
 
-            const code = parseRCode(result.getText())
-            if (!code) return
+            const raw = result.getText()
+            const code = parseRCode(raw)
+            if (!code) {
+              const display = raw.length > 40 ? `${raw.slice(0, 40)}…` : raw
+              setUnrecognized(`Unrecognized barcode: "${display}"`)
+              return
+            }
+
+            setUnrecognized(null)
 
             const now = Date.now()
             const last = lastScanRef.current
@@ -81,7 +97,10 @@ export function BarcodeScanner({ open, onClose, onScan, notFoundMessage }: Props
         <p className="text-sm font-medium text-rhf-mist">Scan R-number barcode</p>
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => {
+            setUnrecognized(null)
+            onClose()
+          }}
           className="min-h-11 rounded-xl px-4 text-sm font-medium text-rhf-mist active:bg-white/10"
         >
           Cancel
@@ -103,9 +122,11 @@ export function BarcodeScanner({ open, onClose, onScan, notFoundMessage }: Props
           <p className="text-sm text-red-300">{error}</p>
         ) : notFoundMessage ? (
           <p className="text-sm text-rhf-amber">{notFoundMessage}</p>
+        ) : unrecognized ? (
+          <p className="text-sm text-rhf-amber">{unrecognized}</p>
         ) : (
           <p className="text-sm text-rhf-mist/80">
-            Point at an R-number barcode (e.g. R12595). QR and other barcodes are ignored.
+            Point at an R-number label (e.g. R12595). Unrecognized scans show the raw value.
           </p>
         )}
       </div>
