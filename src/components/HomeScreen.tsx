@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { APP_NAME } from '../lib/brand'
+import { APP_NAME, APP_VERSION } from '../lib/brand'
 import { AppShell } from './AppShell'
 
 type Props = {
@@ -41,7 +41,10 @@ export function HomeScreen({
               {APP_NAME}
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight lg:mt-1 lg:text-2xl">
-              Inventory Count
+              Inventory Count{' '}
+              <span className="text-lg font-normal text-rhf-mist/60 lg:text-base">
+                {APP_VERSION}
+              </span>
             </h1>
             <p className="mt-2 text-sm text-rhf-mist/85 lg:mt-1">
               Team session in progress
@@ -101,7 +104,10 @@ export function HomeScreen({
             {APP_NAME}
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight lg:mt-1 lg:text-2xl">
-            Inventory Count
+            Inventory Count{' '}
+            <span className="text-lg font-normal text-rhf-mist/60 lg:text-base">
+              {APP_VERSION}
+            </span>
           </h1>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-rhf-mist/85 lg:mt-1">
             Enter both team members, then start counting.
