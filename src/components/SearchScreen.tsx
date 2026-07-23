@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type Fuse from 'fuse.js'
 import type { InventoryItem } from '../types'
 import { parseRCode } from '../lib/barcode'
-import { playScanBeep } from '../lib/beep'
+import { playScanBeep, primeScanBeep } from '../lib/beep'
 import { searchInventory, type SearchableItem } from '../lib/search'
 import { AppShell } from './AppShell'
 import { BarcodeScanner } from './BarcodeScanner'
@@ -176,8 +176,11 @@ export function SearchScreen({
                     if (e.key !== 'Enter') return
                     const code = parseRCode(query)
                     if (!code) return
+                    const item = itemsByCode.get(code)
+                    if (!item) return
                     e.preventDefault()
-                    handleScan(code)
+                    setQuery('')
+                    onSelect(item, 'search')
                   }}
                   placeholder="e.g. 3/4 press 90"
                   autoFocus
@@ -188,6 +191,7 @@ export function SearchScreen({
                   <button
                     type="button"
                     onClick={() => {
+                      primeScanBeep()
                       setScanNotFound(null)
                       setScannerOpen(true)
                     }}

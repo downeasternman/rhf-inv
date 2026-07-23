@@ -1,13 +1,41 @@
+/** Shared AudioContext primed on a user gesture (e.g. Scan tap). */
+let sharedCtx: AudioContext | null = null
+
+function getAudioContextConstructor(): (typeof AudioContext) | null {
+  return (
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext ||
+    null
+  )
+}
+
+/** Resume/create AudioContext during a user gesture so later beeps can play. */
+export function primeScanBeep(): void {
+  try {
+    const AudioCtx = getAudioContextConstructor()
+    if (!AudioCtx) return
+    if (!sharedCtx || sharedCtx.state === 'closed') {
+      sharedCtx = new AudioCtx()
+    }
+    void sharedCtx.resume().catch(() => {})
+  } catch {
+    // ignore
+  }
+}
+
 /** Short confirmation tone for a successful barcode scan. No-ops if audio is unavailable. */
 export function playScanBeep(): void {
   try {
-    const AudioCtx =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext
+    const AudioCtx = getAudioContextConstructor()
     if (!AudioCtx) return
 
-    const ctx = new AudioCtx()
+    if (!sharedCtx || sharedCtx.state === 'closed') {
+      sharedCtx = new AudioCtx()
+    }
+    const ctx = sharedCtx
+    void ctx.resume().catch(() => {})
+
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.type = 'sine'
@@ -21,11 +49,6 @@ export function playScanBeep(): void {
     gain.gain.exponentialRampToValueAtTime(0.001, start + 0.1)
     osc.start(start)
     osc.stop(start + 0.1)
-
-    void ctx.resume().catch(() => {})
-    window.setTimeout(() => {
-      void ctx.close().catch(() => {})
-    }, 150)
   } catch {
     // ignore
   }

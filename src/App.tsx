@@ -155,6 +155,7 @@ export default function App() {
         onBack={() => setScreen({ name: 'search' })}
         onSave={(qty) => {
           setSession(setCount(session, item.id, qty))
+          setSearchQuery('')
           setScreen(
             detailSource === 'scan'
               ? { name: 'search', resumeScanner: true }

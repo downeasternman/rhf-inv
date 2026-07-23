@@ -4,17 +4,53 @@ import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 import { parseRCode } from '../lib/barcode'
 
 const DEBOUNCE_MS = 750
+const NATIVE_DETECT_MS = 250
 
 const HINTS = new Map<DecodeHintType, unknown>([
   [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128, BarcodeFormat.CODE_39]],
   [DecodeHintType.TRY_HARDER, true],
 ])
 
+const VIDEO_CONSTRAINTS: MediaStreamConstraints = {
+  video: {
+    facingMode: { ideal: 'environment' },
+  },
+}
+
+type BarcodeDetectorInstance = {
+  detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>>
+}
+
+type BarcodeDetectorCtor = {
+  new (options?: { formats?: string[] }): BarcodeDetectorInstance
+  getSupportedFormats?: () => Promise<string[]>
+}
+
 type Props = {
   open: boolean
   onClose: () => void
   onScan: (code: string) => void
   notFoundMessage?: string | null
+}
+
+function getBarcodeDetectorCtor(): BarcodeDetectorCtor | null {
+  const w = window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }
+  return w.BarcodeDetector ?? null
+}
+
+async function createNativeDetector(): Promise<BarcodeDetectorInstance | null> {
+  const Ctor = getBarcodeDetectorCtor()
+  if (!Ctor) return null
+  try {
+    const supported = Ctor.getSupportedFormats
+      ? await Ctor.getSupportedFormats()
+      : ['code_128', 'code_39']
+    const formats = ['code_128', 'code_39'].filter((f) => supported.includes(f))
+    if (formats.length === 0) return null
+    return new Ctor({ formats })
+  } catch {
+    return null
+  }
 }
 
 export function BarcodeScanner({ open, onClose, onScan, notFoundMessage }: Props) {
@@ -33,44 +69,99 @@ export function BarcodeScanner({ open, onClose, onScan, notFoundMessage }: Props
     setUnrecognized(null)
     lastScanRef.current = null
 
-    const reader = new BrowserMultiFormatReader(HINTS)
-    let controls: { stop: () => void } | null = null
     let active = true
+    let stream: MediaStream | null = null
+    let detectTimer: number | null = null
+    let zxingControls: { stop: () => void } | null = null
+    const reader = new BrowserMultiFormatReader(HINTS)
+
+    function handleRaw(raw: string) {
+      if (!active) return
+
+      const code = parseRCode(raw)
+      if (!code) {
+        const display = raw.length > 40 ? `${raw.slice(0, 40)}…` : raw
+        setUnrecognized(`Unrecognized barcode: "${display}"`)
+        return
+      }
+
+      setUnrecognized(null)
+
+      const now = Date.now()
+      const last = lastScanRef.current
+      if (last && last.code === code && now - last.at < DEBOUNCE_MS) {
+        return
+      }
+      lastScanRef.current = { code, at: now }
+      onScanRef.current(code)
+    }
+
+    async function startZxing() {
+      zxingControls = await reader.decodeFromConstraints(
+        VIDEO_CONSTRAINTS,
+        videoRef.current!,
+        (result) => {
+          if (!active || !result) return
+          handleRaw(result.getText())
+        },
+      )
+    }
+
+    async function startNative(detector: BarcodeDetectorInstance) {
+      stream = await navigator.mediaDevices.getUserMedia(VIDEO_CONSTRAINTS)
+      const video = videoRef.current
+      if (!video || !active) {
+        stream.getTracks().forEach((t) => t.stop())
+        stream = null
+        return
+      }
+
+      video.srcObject = stream
+      await video.play()
+
+      const tick = async () => {
+        if (!active || !videoRef.current) return
+        try {
+          const codes = await detector.detect(videoRef.current)
+          if (!active) return
+          if (codes.length > 0 && codes[0]?.rawValue) {
+            handleRaw(codes[0].rawValue)
+          }
+        } catch {
+          // ignore frame errors; keep looping
+        }
+        if (active) {
+          detectTimer = window.setTimeout(() => {
+            void tick()
+          }, NATIVE_DETECT_MS)
+        }
+      }
+
+      void tick()
+    }
 
     async function start() {
       try {
-        controls = await reader.decodeFromConstraints(
-          {
-            video: {
-              facingMode: { ideal: 'environment' },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-          },
-          videoRef.current!,
-          (result) => {
-            if (!active || !result) return
+        const detector = await createNativeDetector()
+        if (!active) return
 
-            const raw = result.getText()
-            const code = parseRCode(raw)
-            if (!code) {
-              const display = raw.length > 40 ? `${raw.slice(0, 40)}…` : raw
-              setUnrecognized(`Unrecognized barcode: "${display}"`)
+        if (detector) {
+          try {
+            await startNative(detector)
+            return
+          } catch (e) {
+            if (!active) return
+            if (e instanceof Error && e.name === 'NotAllowedError') {
+              setError(
+                'Camera permission denied. Allow camera access in your browser settings.',
+              )
               return
             }
+            // Fall through to ZXing
+          }
+        }
 
-            setUnrecognized(null)
-
-            const now = Date.now()
-            const last = lastScanRef.current
-            if (last && last.code === code && now - last.at < DEBOUNCE_MS) {
-              return
-            }
-            lastScanRef.current = { code, at: now }
-
-            onScanRef.current(code)
-          },
-        )
+        await startZxing()
       } catch (e) {
         if (!active) return
         const msg =
@@ -85,7 +176,14 @@ export function BarcodeScanner({ open, onClose, onScan, notFoundMessage }: Props
 
     return () => {
       active = false
-      controls?.stop()
+      if (detectTimer !== null) window.clearTimeout(detectTimer)
+      zxingControls?.stop()
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop())
+        stream = null
+      }
+      const video = videoRef.current
+      if (video) video.srcObject = null
     }
   }, [open])
 
