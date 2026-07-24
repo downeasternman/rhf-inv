@@ -8,6 +8,7 @@ import { AppShell } from './AppShell'
 import { BarcodeScanner } from './BarcodeScanner'
 import { CategoryDrawer } from './CategoryDrawer'
 import { CategoryPanel } from './CategoryPanel'
+import { RNumberPad } from './RNumberPad'
 import { VirtualItemList } from './VirtualItemList'
 
 const WEDGE_GAP_MS = 80
@@ -49,6 +50,7 @@ export function SearchScreen({
   const [debounced, setDebounced] = useState(initialQuery)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [scannerOpen, setScannerOpen] = useState(() => Boolean(resumeScanner))
+  const [rPadOpen, setRPadOpen] = useState(false)
   const [scanNotFound, setScanNotFound] = useState<string | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const wedgeBufferRef = useRef('')
@@ -72,7 +74,6 @@ export function SearchScreen({
         playScanBeep()
         setScannerOpen(false)
         setScanNotFound(null)
-        setQuery('')
         onSelect(item, 'scan')
         return
       }
@@ -95,7 +96,7 @@ export function SearchScreen({
   }, [query, onQueryChange])
 
   useEffect(() => {
-    if (scannerOpen) return
+    if (scannerOpen || rPadOpen) return
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.target === searchInputRef.current) return
@@ -122,7 +123,7 @@ export function SearchScreen({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [scannerOpen, handleScan])
+  }, [scannerOpen, rPadOpen, handleScan])
 
   const results = useMemo(
     () => searchInventory(fuse, items, debounced, selectedCategories),
@@ -184,7 +185,6 @@ export function SearchScreen({
                     const item = itemsByCode.get(code)
                     if (!item) return
                     e.preventDefault()
-                    setQuery('')
                     onSelect(item, 'search')
                   }}
                   placeholder="e.g. 3/4 press 90"
@@ -198,12 +198,25 @@ export function SearchScreen({
                     onClick={() => {
                       primeScanBeep()
                       searchInputRef.current?.blur()
+                      setRPadOpen(false)
                       setScanNotFound(null)
                       setScannerOpen(true)
                     }}
                     className="min-h-12 flex-1 rounded-xl border border-rhf-line bg-white px-3 text-sm font-medium text-rhf-pine active:bg-rhf-mist lg:flex-none lg:hover:bg-rhf-mist"
                   >
                     Scan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      searchInputRef.current?.blur()
+                      setScannerOpen(false)
+                      setScanNotFound(null)
+                      setRPadOpen(true)
+                    }}
+                    className="min-h-12 flex-1 rounded-xl border border-rhf-line bg-white px-3 text-sm font-medium text-rhf-pine active:bg-rhf-mist lg:flex-none lg:hover:bg-rhf-mist"
+                  >
+                    R#
                   </button>
                   <button
                     type="button"
@@ -264,6 +277,18 @@ export function SearchScreen({
           onClose={closeScanner}
           onScan={handleScan}
           notFoundMessage={scanNotFound}
+        />
+
+        <RNumberPad
+          open={rPadOpen}
+          onClose={() => setRPadOpen(false)}
+          onSubmit={(code) => {
+            const item = itemsByCode.get(code)
+            if (!item) return 'not-found'
+            setRPadOpen(false)
+            onSelect(item, 'search')
+            return 'ok'
+          }}
         />
       </div>
     </AppShell>
